@@ -1,7 +1,6 @@
 import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Permission } from "./permission.entity";
 import { Menu } from "src/menu/entities/menu.entity";
-import { PermissionGroup } from "./permissionGroup.entity";
+import { PermissionGroup } from "src/permission/entities/permissionGroup.entity";
 // 角色表
 @Entity()
 export class Role {

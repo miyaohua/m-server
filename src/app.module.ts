@@ -9,6 +9,8 @@ import { LoginGuard } from 'src/common/guard/login.guard'
 import { PermissionGuard } from './common/guard/permission.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { MenuModule } from './menu/menu.module';
+import { RoleModule } from './role/role.module';
+import { PermissionModule } from './permission/permission.module';
 
 @Module({
   imports: [
@@ -52,6 +54,8 @@ import { MenuModule } from './menu/menu.module';
     RedisModule,
     EmailModule,
     MenuModule,
+    RoleModule,
+    PermissionModule,
   ],
   controllers: [],
   providers: [

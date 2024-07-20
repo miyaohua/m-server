@@ -6,7 +6,7 @@ import { In, Repository, TreeRepository } from 'typeorm';
 import { Menu } from './entities/menu.entity';
 import { BussException } from 'src/common/exception/buss.exception';
 import { User } from 'src/user/entities/user.entity';
-import { Role } from 'src/user/entities/role.entity';
+import { Role } from 'src/role/entities/role.entity';
 
 @Injectable()
 export class MenuService {

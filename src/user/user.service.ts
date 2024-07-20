@@ -14,10 +14,10 @@ import { v1 } from 'uuid'
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
-import { Role } from './entities/role.entity';
-import { Permission } from './entities/permission.entity';
+import { Role } from 'src/role/entities/role.entity';
+import { Permission } from 'src/permission/entities/permission.entity';
 import { Menu } from 'src/menu/entities/menu.entity';
-import { PermissionGroup } from './entities/permissionGroup.entity';
+import { PermissionGroup } from 'src/permission/entities/permissionGroup.entity';
 import { DelUserDto } from './dto/delUser.dto';
 import { ChangeUserStatusDto } from './dto/changeUserStatus.dto';
 import { addUserDto } from './dto/addUser.dto'
@@ -307,6 +307,8 @@ export class UserService {
       throw new BussException('修改失败')
     }
   }
+
+
 
   @InjectRepository(Role)
   private readonly roleRepository: Repository<Role>

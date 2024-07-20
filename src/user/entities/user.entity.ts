@@ -1,6 +1,5 @@
 import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { Role } from "./role.entity";
-import { Menu } from "src/menu/entities/menu.entity";
+import { Role } from "src/role/entities/role.entity";
 
 // 用户表
 @Entity()
