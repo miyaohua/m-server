@@ -60,15 +60,16 @@ export class MenuService {
       },
       relations: ['menus']
     })
-    const menuIds = roles.menus.map(menu => menu.id);
+    const menuIds = roles?.menus.map(menu => menu.id) || [];
 
     // 获取这些菜单项的树形结构
-    const menus = await this.menuTreeRepository.findTrees();
+    const menus = await this.menuTreeRepository.findTrees() || [];
+    console.log(menus);
 
     // 过滤掉用户没有权限的菜单项
     const filterMenus = (menus: Menu[]): Menu[] => {
       return menus
-        .filter(menu => menuIds.includes(menu.id))
+        ?.filter(menu => menuIds?.includes(menu.id))
         .map(menu => ({
           ...menu,
           children: filterMenus(menu.children || [])

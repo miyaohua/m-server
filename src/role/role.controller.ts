@@ -1,34 +1,32 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { RoleService } from './role.service';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
+import { requireLogin, requirePermission } from 'src/common/decorator/auth.decorator';
+import { ApiOperation } from '@nestjs/swagger';
+import { GetAllRoleDto } from './dto/getAllRole.dto'
 
 @Controller('role')
 export class RoleController {
-  constructor(private readonly roleService: RoleService) {}
+  constructor(private readonly roleService: RoleService) { }
 
-  @Post()
-  create(@Body() createRoleDto: CreateRoleDto) {
-    return this.roleService.create(createRoleDto);
+  @ApiOperation({
+    summary: '角色分页查询'
+  })
+  @Post('/getAllRole')
+  @requireLogin()
+  @requirePermission('query-role')
+  getAllRole(getAllRoleDto: GetAllRoleDto) {
+    return this.roleService.getAllRole(getAllRoleDto)
   }
 
-  @Get()
-  findAll() {
-    return this.roleService.findAll();
+
+  @ApiOperation({
+    summary: '角色查询'
+  })
+  @Post('/getRole')
+  @requireLogin()
+  @requirePermission('query-role')
+  getRole() {
+    return this.roleService.getRole()
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.roleService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
-    return this.roleService.update(+id, updateRoleDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.roleService.remove(+id);
-  }
 }

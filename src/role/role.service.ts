@@ -1,26 +1,38 @@
 import { Injectable } from '@nestjs/common';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
+import { GetAllRoleDto } from './dto/getAllRole.dto';
+import { Like } from 'typeorm';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Role } from './entities/role.entity';
 
 @Injectable()
 export class RoleService {
-  create(createRoleDto: CreateRoleDto) {
-    return 'This action adds a new role';
+  @InjectRepository(Role)
+  private readonly roleRepository: Repository<Role>
+
+
+  async getAllRole(getAllRoleDto: GetAllRoleDto) {
+    const { name, pageSize, pageNum } = getAllRoleDto
+    const queryConditions = {
+      ...(name && { name: Like(`%${name}%`) }),
+    };
+    const [result, total] = await this.roleRepository.findAndCount({
+      where: queryConditions,
+      skip: (pageNum - 1) * pageSize,
+      take: pageSize,
+      relations: ['permissionGroup', 'permissionGroup.permission']
+    })
+
+    return {
+      list: result,
+      total
+    }
   }
 
-  findAll() {
-    return `This action returns all role`;
+
+  async getRole() {
+    console.log(await this.roleRepository.find())
+    return await this.roleRepository.find()
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} role`;
-  }
-
-  update(id: number, updateRoleDto: UpdateRoleDto) {
-    return `This action updates a #${id} role`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} role`;
-  }
 }

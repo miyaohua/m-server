@@ -288,24 +288,59 @@ export class UserService {
    * @param editUserDto 
    */
   async editUser(editUserDto: EditUserDto) {
-    let updateObj: any = {}
+    // 如果提供了密码，则进行验证和哈希处理
     if (editUserDto.password) {
+      console.log(editUserDto.password);
+
       const reg = /^(?![\d]+$)(?![a-zA-Z]+$)(?![^a-zA-Z0-9]+$).{6,20}$/;
-      const flag = reg.test(editUserDto.password)
+      const flag = reg.test(editUserDto.password);
       if (!flag) {
-        throw new BussException('请输入6-20位字符,(字母、‌数字、‌特殊字符)至少包含两种字符类型')
+        throw new BussException('请输入6-20位字符，（字母、数字、特殊字符）至少包含两种字符类型');
       }
-      updateObj.password = await hash(editUserDto.password)
+      editUserDto.password = await hash(editUserDto.password);
     }
 
-    updateObj.username = editUserDto.username;
-    updateObj.email = editUserDto.email;
-    try {
-      await this.userRepository.update(editUserDto.id, updateObj)
-      return '修改成功'
-    } catch (error) {
-      throw new BussException('修改失败')
-    }
+    await this.userRepository.manager.transaction(async (transactionalEntityManager) => {
+      const userRepository = transactionalEntityManager.getRepository(User);
+      const roleRepository = transactionalEntityManager.getRepository(Role);
+      // 更新用户信息
+      let updateObj: any = {
+        username: editUserDto.username,
+        email: editUserDto.email,
+      };
+      if (editUserDto.password) {
+        updateObj.password = editUserDto.password;
+      }
+      await userRepository.update(editUserDto.id, updateObj);
+      // 批量更新角色
+      if (editUserDto.roles && editUserDto.roles.length) {
+        const user = await userRepository.findOne({ where: { id: editUserDto.id }, relations: ['roles'] });
+        if (!user) {
+          throw new BussException('用户不存在');
+        }
+        // 清空现有的角色
+        user.roles = [];
+        // 添加新角色
+        for (const roleId of editUserDto.roles) {
+          const role = await roleRepository.findOne({ where: { id: roleId } });
+          if (!role) {
+            throw new BussException(`角色ID ${roleId} 不存在`);
+          }
+          user.roles.push(role);
+        }
+        await userRepository.save(user);
+      } else {
+        const user = await userRepository.findOne({ where: { id: editUserDto.id }, relations: ['roles'] });
+        if (!user) {
+          throw new BussException('用户不存在');
+        }
+        // 清空现有的角色
+        user.roles = [];
+        await userRepository.save(user);
+      }
+    });
+
+    return '修改成功';
   }
 
 
@@ -390,7 +425,6 @@ export class UserService {
     permission4.desc = '用户拥有查询菜单权限'
     await this.permissionRepository.save(permission4)
 
-
     let permissionGroup1 = new PermissionGroup()
     permissionGroup1.name = '菜单权限'
     permissionGroup1.permissions = [permission1, permission2, permission3, permission4]
@@ -422,20 +456,44 @@ export class UserService {
     permission8.desc = '用户拥有查询用户权限'
     await this.permissionRepository.save(permission8)
 
-    let permission9 = new Permission()
-    permission9.identifying = 'update-user-status';
-    permission9.name = '修改用户状态'
-    permission9.desc = '用户拥有修改用户状态权限'
-    await this.permissionRepository.save(permission9)
-
-
-
-
     let permissionGroup2 = new PermissionGroup()
     permissionGroup2.name = '用户权限'
-    permissionGroup2.permissions = [permission5, permission6, permission7, permission8, permission9]
+    permissionGroup2.permissions = [permission5, permission6, permission7, permission8]
     await this.PermissionGroupRepository.save(permissionGroup2)
 
+
+
+
+
+    // 角色权限
+    let permission10 = new Permission()
+    permission10.identifying = 'create-role';
+    permission10.name = '新增角色'
+    permission10.desc = '用户拥有新增角色权限'
+    await this.permissionRepository.save(permission10)
+
+    let permission11 = new Permission()
+    permission11.identifying = 'update-role';
+    permission11.name = '更新角色'
+    permission11.desc = '用户拥有更新角色权限'
+    await this.permissionRepository.save(permission11)
+
+    let permission12 = new Permission()
+    permission12.identifying = 'delete-role';
+    permission12.name = '删除角色'
+    permission12.desc = '用户拥有删除角色权限'
+    await this.permissionRepository.save(permission12)
+
+    let permission13 = new Permission()
+    permission13.identifying = 'query-role';
+    permission13.name = '查询角色'
+    permission13.desc = '用户拥有查询角色权限'
+    await this.permissionRepository.save(permission13)
+
+    let permissionGroup3 = new PermissionGroup()
+    permissionGroup3.name = '角色权限'
+    permissionGroup3.permissions = [permission10, permission11, permission12, permission13]
+    await this.PermissionGroupRepository.save(permissionGroup3)
 
 
 
@@ -443,7 +501,7 @@ export class UserService {
     let role = new Role()
     role.name = '超级管理员'
     role.desc = '拥有网站的最高控制权'
-    role.permissionGroups = [permissionGroup1, permissionGroup2]
+    role.permissionGroups = [permissionGroup1, permissionGroup2, permissionGroup3]
     role.menus = [menu1, menu2, menu3, menu4]
     await this.roleRepository.save(role)
 

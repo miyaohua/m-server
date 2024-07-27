@@ -66,7 +66,7 @@ export class UserController {
   @requirePermission('delete-user')
   @Post('/delUser')
   delUser(@Body() delUserDto: DelUserDto) {
-    this.userService.delUser(delUserDto)
+    return this.userService.delUser(delUserDto)
   }
 
 
@@ -74,10 +74,10 @@ export class UserController {
     summary: '修改用户状态'
   })
   @requireLogin()
-  @requirePermission('update-user-status')
+  @requirePermission('update-user')
   @Post('/changeUserStatus')
   changeUserStatus(@Body() changeUserStatusDto: ChangeUserStatusDto) {
-    this.userService.changeUserStatus(changeUserStatusDto)
+    return this.userService.changeUserStatus(changeUserStatusDto)
   }
 
 
@@ -100,7 +100,7 @@ export class UserController {
   @requirePermission('update-user')
   @Post('/editUser')
   editUser(@Body() editUserDto: EditUserDto) {
-    this.userService.editUser(editUserDto)
+    return this.userService.editUser(editUserDto)
   }
 
 

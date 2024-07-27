@@ -1,13 +1,9 @@
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator"
 
-export class GetAllDto {
+export class GetAllRoleDto {
     @IsOptional()
     @IsString()
-    email: string
-
-    @IsOptional()
-    status: string
-
+    name: string
 
     @IsNumber()
     @IsNotEmpty({ message: '请输入pageSize' })
