@@ -238,6 +238,10 @@ export class UserService {
     if (!delUserDto.ids.length) {
       throw new BussException('请输入要删除的用户id')
     }
+
+    if (delUserDto.ids.includes(1)) {
+      throw new BussException('初始化账号禁止删除')
+    }
     try {
       await this.userRepository.delete(delUserDto.ids)
       return '删除成功'

@@ -64,7 +64,6 @@ export class MenuService {
 
     // 获取这些菜单项的树形结构
     const menus = await this.menuTreeRepository.findTrees() || [];
-    console.log(menus);
 
     // 过滤掉用户没有权限的菜单项
     const filterMenus = (menus: Menu[]): Menu[] => {

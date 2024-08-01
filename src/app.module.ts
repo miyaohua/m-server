@@ -27,7 +27,7 @@ import { PermissionModule } from './permission/permission.module';
           // 自动引入实体
           autoLoadEntities: true,
           // 自动同步，生产取消
-          synchronize: true,
+          // synchronize: true,
         }
       },
       inject: [ConfigService]

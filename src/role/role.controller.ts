@@ -3,6 +3,7 @@ import { RoleService } from './role.service';
 import { requireLogin, requirePermission } from 'src/common/decorator/auth.decorator';
 import { ApiOperation } from '@nestjs/swagger';
 import { GetAllRoleDto } from './dto/getAllRole.dto'
+import { DeleteDto } from './dto/deleteRole.dto'
 
 @Controller('role')
 export class RoleController {
@@ -14,7 +15,7 @@ export class RoleController {
   @Post('/getAllRole')
   @requireLogin()
   @requirePermission('query-role')
-  getAllRole(getAllRoleDto: GetAllRoleDto) {
+  getAllRole(@Body() getAllRoleDto: GetAllRoleDto) {
     return this.roleService.getAllRole(getAllRoleDto)
   }
 
@@ -28,5 +29,17 @@ export class RoleController {
   getRole() {
     return this.roleService.getRole()
   }
+
+
+  @ApiOperation({
+    summary: '删除角色'
+  })
+  @Post('/delRole')
+  @requireLogin()
+  @requirePermission('delete-role')
+  delete(@Body() deleteDto: DeleteDto) {
+    return this.roleService.delete(deleteDto)
+  }
+
 
 }
