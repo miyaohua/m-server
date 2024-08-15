@@ -7,6 +7,7 @@ import { Menu } from './entities/menu.entity';
 import { BussException } from 'src/common/exception/buss.exception';
 import { User } from 'src/user/entities/user.entity';
 import { Role } from 'src/role/entities/role.entity';
+import { AllocationMenuDto } from './dto/AllocationMenu.dto';
 
 @Injectable()
 export class MenuService {
@@ -49,7 +50,7 @@ export class MenuService {
   }
 
   /**
-   * 获取树形结构菜单
+   * 获取有权限的树形结构菜单
    * @returns 
    */
   async findAll(userInfo) {
@@ -77,33 +78,65 @@ export class MenuService {
     return filterMenus(menus);
   }
 
+
+  async allMenu() {
+    // 获取这些菜单项的树形结构
+    const menus = await this.menuTreeRepository.findTrees() || [];
+    return menus;
+  }
+
   /**
    * 获取扁平化菜单
    */
   async flatMenu(userInfo) {
     // 角色下有哪些菜单
-    const roles = await this.roleRepository.findOne({
-      where: {
-        name: In(userInfo.roles)
-      },
-      relations: ['menus']
-    })
-    const menuIds = roles.menus.map(menu => menu.id);
-    const allMenu = await this.menuRepository.find();
-    allMenu.forEach((menu, index) => {
-      if (!menuIds.includes(menu.id)) {
-        allMenu.splice(index, 1)
+    try {
+      const roles = await this.roleRepository.findOne({
+        where: {
+          name: In(userInfo.roles)
+        },
+        relations: ['menus']
+      })
+      if (!roles) {
+        return []
       }
-    })
-    return allMenu
+      const menuIds = roles?.menus.map(menu => menu.id);
+      const allMenu = await this.menuRepository.find();
+      allMenu.forEach((menu, index) => {
+        if (!menuIds.includes(menu.id)) {
+          allMenu.splice(index, 1)
+        }
+      })
+      return allMenu
+    } catch (error) {
+      throw new BussException('查询失败')
+    }
   }
 
 
-  update(id: number, updateMenuDto: UpdateMenuDto) {
-    return `This action updates a #${id} menu`;
+  /**
+   * 分配菜单
+   */
+  async allocationMenu(allocationMenuDto: AllocationMenuDto) {
+    const { roleId, menuIds } = allocationMenuDto
+    if (roleId == 1) {
+      throw new BussException('初始化账号禁止操作')
+    }
+    try {
+      await this.roleRepository.manager.transaction(async (transactionalEntityManager) => {
+        const role = await this.roleRepository.findOne({
+          where: {
+            id: roleId
+          }
+        })
+        let menus = await this.menuRepository.findByIds(menuIds);
+        role.menus = menus
+        await transactionalEntityManager.save(role);
+      })
+      return "分配菜单成功";
+    } catch (error) {
+      throw new BussException("分配菜单失败");
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} menu`;
-  }
 }

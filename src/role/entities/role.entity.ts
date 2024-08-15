@@ -1,36 +1,45 @@
-import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from "typeorm";
 import { Menu } from "src/menu/entities/menu.entity";
 import { PermissionGroup } from "src/permission/entities/permissionGroup.entity";
+import { Permission } from "../../permission/entities/permission.entity";
+import { DateTransformer } from "../../common/transformer/dateTransformer";
+
 // 角色表
 @Entity()
 export class Role {
-    @PrimaryGeneratedColumn()
-    id: number
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({ comment: '角色名称' })
-    name: string
+  @Column({ comment: "角色名称", unique: true })
+  name: string;
 
-    @Column({ comment: '角色描述' })
-    desc: string
+  @Column({ comment: "角色描述" })
+  desc: string;
 
-    @CreateDateColumn({ comment: '创建日期' })
-    created_at: Date
+  @CreateDateColumn({ comment: "创建日期", transformer: new DateTransformer() })
+  created_at: Date;
 
-    @UpdateDateColumn({ comment: '更新日期' })
-    updated_at: Date
+  @UpdateDateColumn({ comment: "更新日期", transformer: new DateTransformer() })
+  updated_at: Date;
 
-
-    // 定义多对多关系
-    @ManyToMany(() => PermissionGroup)
-    @JoinTable({
-        name: 'role_permissionGroup'
-    })
-    permissionGroups: PermissionGroup[]
+  @ManyToMany(() => Permission)
+  @JoinTable({
+    name: "role_permission"
+  })
+  permissions: Permission[];
 
 
-    @ManyToMany(() => Menu)
-    @JoinTable({
-        name: 'role_menu'
-    })
-    menus: Menu[]
+  @ManyToMany(() => Menu)
+  @JoinTable({
+    name: "role_menu"
+  })
+  menus: Menu[];
 }

@@ -1,45 +1,69 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { RoleService } from './role.service';
-import { requireLogin, requirePermission } from 'src/common/decorator/auth.decorator';
-import { ApiOperation } from '@nestjs/swagger';
-import { GetAllRoleDto } from './dto/getAllRole.dto'
-import { DeleteDto } from './dto/deleteRole.dto'
+import { Controller, Get, Post, Body, Patch, Param, Delete } from "@nestjs/common";
+import { RoleService } from "./role.service";
+import { requireLogin, requirePermission } from "src/common/decorator/auth.decorator";
+import { ApiOperation } from "@nestjs/swagger";
+import { GetAllRoleDto } from "./dto/getAllRole.dto";
+import { DeleteDto } from "./dto/deleteRole.dto";
+import { AddRoleDto } from "./dto/addRole.dto";
+import { EditRoleDto } from "./dto/editRole.dto";
 
-@Controller('role')
+@Controller("role")
 export class RoleController {
-  constructor(private readonly roleService: RoleService) { }
+  constructor(private readonly roleService: RoleService) {
+  }
 
   @ApiOperation({
-    summary: '角色分页查询'
+    summary: "角色分页查询"
   })
-  @Post('/getAllRole')
+  @Post("/getAllRole")
   @requireLogin()
-  @requirePermission('query-role')
+  @requirePermission("query-role")
   getAllRole(@Body() getAllRoleDto: GetAllRoleDto) {
-    return this.roleService.getAllRole(getAllRoleDto)
+    return this.roleService.getAllRole(getAllRoleDto);
   }
 
 
   @ApiOperation({
-    summary: '角色查询'
+    summary: "角色查询"
   })
-  @Post('/getRole')
+  @Post("/getRole")
   @requireLogin()
-  @requirePermission('query-role')
+  @requirePermission("query-role")
   getRole() {
-    return this.roleService.getRole()
+    return this.roleService.getRole();
   }
 
 
   @ApiOperation({
-    summary: '删除角色'
+    summary: "删除角色"
   })
-  @Post('/delRole')
+  @Post("/delRole")
   @requireLogin()
-  @requirePermission('delete-role')
+  @requirePermission("delete-role")
   delete(@Body() deleteDto: DeleteDto) {
-    return this.roleService.delete(deleteDto)
+    return this.roleService.delete(deleteDto);
   }
 
+
+  @ApiOperation({
+    summary: "新增角色"
+  })
+  @Post("/addRole")
+  @requireLogin()
+  @requirePermission("create-role")
+  add(@Body() addRoleDto: AddRoleDto) {
+    return this.roleService.add(addRoleDto);
+  }
+
+
+  @ApiOperation({
+    summary: "修改角色"
+  })
+  @Post("/editRole")
+  @requireLogin()
+  @requirePermission("update-role")
+  edit(@Body() editRoleDto: EditRoleDto) {
+    return this.roleService.edit(editRoleDto);
+  }
 
 }

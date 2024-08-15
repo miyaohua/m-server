@@ -1,38 +1,46 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
-import { UpdateMenuDto } from './dto/update-menu.dto';
+import { AllocationMenuDto } from './dto/AllocationMenu.dto'
 import { requireLogin, requirePermission, UserInfo } from 'src/common/decorator/auth.decorator';
 
 @Controller('menu')
 export class MenuController {
   constructor(private readonly menuService: MenuService) { }
 
-  @requireLogin()
+
   @Post()
+  @requireLogin()
+  @requirePermission("create-menu")
   create(@Body() createMenuDto: CreateMenuDto) {
     return this.menuService.create(createMenuDto);
   }
 
-  @requireLogin()
+
+
   @Get()
+  @requireLogin()
   findAll(@UserInfo() userInfo) {
     return this.menuService.findAll(userInfo);
   }
 
+
+  @Get('/allMenu')
   @requireLogin()
+  allMenu() {
+    return this.menuService.allMenu();
+  }
+
   @Post('/flatMenu')
+  @requireLogin()
   flagMenu(@UserInfo() userInfo) {
     return this.menuService.flatMenu(userInfo)
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMenuDto: UpdateMenuDto) {
-    return this.menuService.update(+id, updateMenuDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.menuService.remove(+id);
+  @Post('/allocationMenu')
+  @requireLogin()
+  @requirePermission("distribution-menu")
+  allocationMenu(@Body() allocationMenuDto: AllocationMenuDto) {
+    return this.menuService.allocationMenu(allocationMenuDto)
   }
 }

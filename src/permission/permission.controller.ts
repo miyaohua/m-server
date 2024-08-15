@@ -1,34 +1,32 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { PermissionService } from './permission.service';
-import { CreatePermissionDto } from './dto/create-permission.dto';
-import { UpdatePermissionDto } from './dto/update-permission.dto';
+import { Controller, Post, Body } from "@nestjs/common";
+import { PermissionService } from "./permission.service";
+import { requireLogin, requirePermission } from "../common/decorator/auth.decorator";
+import { ApiOperation } from "@nestjs/swagger";
+import { DistributionDto } from "./dto/Distribution.dto";
 
-@Controller('permission')
+@Controller("permission")
 export class PermissionController {
-  constructor(private readonly permissionService: PermissionService) {}
-
-  @Post()
-  create(@Body() createPermissionDto: CreatePermissionDto) {
-    return this.permissionService.create(createPermissionDto);
+  constructor(private readonly permissionService: PermissionService) {
   }
 
-  @Get()
-  findAll() {
-    return this.permissionService.findAll();
+  @ApiOperation({
+    summary: "根据组获取角色"
+  })
+  @Post("/getPermissions")
+  @requireLogin()
+  @requirePermission("query-permission")
+  getPermissions() {
+    return this.permissionService.getPermissions();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.permissionService.findOne(+id);
+  @ApiOperation({
+    summary: "为角色分配权限"
+  })
+  @Post("/distributionPermission")
+  @requireLogin()
+  @requirePermission("distribution-permission")
+  distributionPermission(@Body() distributionDto: DistributionDto) {
+    return this.permissionService.distributionPermission(distributionDto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto) {
-    return this.permissionService.update(+id, updatePermissionDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.permissionService.remove(+id);
-  }
 }

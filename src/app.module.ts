@@ -1,16 +1,17 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { UserModule } from './user/user.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
-import { RedisModule } from './redis/redis.module';
-import { EmailModule } from './email/email.module';
-import { LoginGuard } from 'src/common/guard/login.guard'
-import { PermissionGuard } from './common/guard/permission.guard';
-import { APP_GUARD } from '@nestjs/core';
-import { MenuModule } from './menu/menu.module';
-import { RoleModule } from './role/role.module';
-import { PermissionModule } from './permission/permission.module';
+import { MiddlewareConsumer, Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { UserModule } from "./user/user.module";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { JwtModule } from "@nestjs/jwt";
+import { RedisModule } from "./redis/redis.module";
+import { EmailModule } from "./email/email.module";
+import { LoginGuard } from "src/common/guard/login.guard";
+import { PermissionGuard } from "./common/guard/permission.guard";
+import { APP_GUARD } from "@nestjs/core";
+import { MenuModule } from "./menu/menu.module";
+import { RoleModule } from "./role/role.module";
+import { PermissionModule } from "./permission/permission.module";
+import { resetTokenMiddleware } from "./common/middleware/resetTokenMiddleware";
 
 @Module({
   imports: [
@@ -18,35 +19,35 @@ import { PermissionModule } from './permission/permission.module';
     TypeOrmModule.forRootAsync({
       useFactory(configService: ConfigService) {
         return {
-          type: 'mysql',
-          host: configService.get('mysql_host'),
-          port: configService.get('mysql_port'),
-          username: configService.get('mysql_username'),
-          password: configService.get('mysql_password'),
-          database: configService.get('mysql_datebase'),
+          type: "mysql",
+          host: configService.get("mysql_host"),
+          port: configService.get("mysql_port"),
+          username: configService.get("mysql_username"),
+          password: configService.get("mysql_password"),
+          database: configService.get("mysql_datebase"),
           // 自动引入实体
           autoLoadEntities: true,
           // 自动同步，生产取消
-          // synchronize: true,
-        }
+          synchronize: true
+        };
       },
       inject: [ConfigService]
     }),
     // config全局配置
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: 'src/.env'
+      envFilePath: "src/.env"
     }),
     // jwt配置
     JwtModule.registerAsync({
       global: true,
       useFactory(configService: ConfigService) {
         return {
-          secret: configService.get('jwt_secret'),
+          secret: configService.get("jwt_secret"),
           signOptions: {
-            expiresIn: configService.get('jwt_expiresIn'),
+            expiresIn: configService.get("jwt_expiresIn")
           }
-        }
+        };
       },
       inject: [ConfigService]
     }),
@@ -55,7 +56,7 @@ import { PermissionModule } from './permission/permission.module';
     EmailModule,
     MenuModule,
     RoleModule,
-    PermissionModule,
+    PermissionModule
   ],
   controllers: [],
   providers: [
@@ -68,6 +69,13 @@ import { PermissionModule } from './permission/permission.module';
       provide: APP_GUARD,
       useClass: PermissionGuard
     }
-  ],
+  ]
 })
-export class AppModule { }
+export class AppModule {
+  // 全局中间件
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(resetTokenMiddleware)
+      .forRoutes("*"); // `*` 表示所有路由
+  }
+}
