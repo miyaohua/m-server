@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { RedisService } from 'src/redis/redis.service';
-import { BussException } from 'src/common/exception/buss.exception';
 import { createTransport, Transporter } from 'nodemailer'
 import { ConfigService } from '@nestjs/config';
 

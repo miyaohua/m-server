@@ -2,7 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { MenuService } from './menu.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { AllocationMenuDto } from './dto/AllocationMenu.dto'
+import { MenuByNumDto } from './dto/MenuByNum.dto'
 import { requireLogin, requirePermission, UserInfo } from 'src/common/decorator/auth.decorator';
+import { DelMenuDto } from './dto/DelMenu.dto';
 
 @Controller('menu')
 export class MenuController {
@@ -15,7 +17,6 @@ export class MenuController {
   create(@Body() createMenuDto: CreateMenuDto) {
     return this.menuService.create(createMenuDto);
   }
-
 
 
   @Get()
@@ -43,4 +44,19 @@ export class MenuController {
   allocationMenu(@Body() allocationMenuDto: AllocationMenuDto) {
     return this.menuService.allocationMenu(allocationMenuDto)
   }
+
+
+  @Post('/menuByNum')
+  @requireLogin()
+  menuByNum(@Body() menuByNumDto: MenuByNumDto) {
+    return this.menuService.menuByNum(menuByNumDto)
+  }
+
+
+  @Post('/delMenu')
+  @requireLogin()
+  delMenu(@Body() delMenuDto: DelMenuDto) {
+    return this.menuService.delMenu(delMenuDto)
+  }
+
 }

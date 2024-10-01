@@ -33,6 +33,7 @@ export class LoginGuard implements CanActivate {
     try {
       const token = authorization.split(" ")[1];
       const data = this.jwtService.verify(token);
+      // userInfo中包含登录成功的用户信息
       let { iat, exp, ...userInfo } = data;
       request.userInfo = {
         ...userInfo,

@@ -28,10 +28,8 @@ export class User {
   @Column({ comment: "用户状态", default: true })
   status: boolean;
 
-
   @CreateDateColumn({ comment: "创建日期", transformer: new DateTransformer() })
   created_at: Date;
-
 
   @UpdateDateColumn({ comment: "更新日期", transformer: new DateTransformer() })
   updated_at: Date;

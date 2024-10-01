@@ -8,6 +8,7 @@ import { BussException } from 'src/common/exception/buss.exception';
 import { User } from 'src/user/entities/user.entity';
 import { Role } from 'src/role/entities/role.entity';
 import { AllocationMenuDto } from './dto/AllocationMenu.dto';
+import { MenuByNumDto } from './dto/MenuByNum.dto';
 
 @Injectable()
 export class MenuService {
@@ -136,6 +137,73 @@ export class MenuService {
       return "分配菜单成功";
     } catch (error) {
       throw new BussException("分配菜单失败");
+    }
+  }
+
+
+  // 菜单列表
+  async menuByNum(menuByNumDto: MenuByNumDto) {
+    // 有条件的情况下
+    if (menuByNumDto.name) {
+      const filterMenus = (menus, name) => {
+        return menus
+          .map(menu => {
+            const filteredChildren = filterMenus(menu.children || [], name);
+            const shouldInclude = menu.name.includes(name) || filteredChildren.length > 0;
+
+            return shouldInclude ? {
+              ...menu,
+              children: filteredChildren.length > 0 ? filteredChildren : null
+            } : null;
+          })
+          .filter(menu => menu !== null); // 过滤掉 null
+      };
+      const allMenus = await this.menuTreeRepository.findTrees() || [];
+      return filterMenus(allMenus, menuByNumDto.name);
+    } else {
+
+      const menus = await this.menuTreeRepository.findTrees() || [];
+      const processMenus = (menus) => {
+        return menus.map(menu => {
+          // 递归处理 children，如果 children 是空数组则设置为 null
+          const processedChildren = menu.children && menu.children.length > 0
+            ? processMenus(menu.children)
+            : null;
+
+          return {
+            ...menu,
+            children: processedChildren
+          };
+        });
+      };
+
+      const processedMenus = processMenus(menus);
+      return processedMenus;
+    }
+  }
+
+
+  // 删除菜单
+  async delMenu(delMenuDto) {
+    if (!delMenuDto.id) {
+      throw new BussException('请输入有效的菜单ID');
+    }
+    // 判断是否有下级菜单
+    const data = await this.menuRepository.findOne({
+      where: {
+        parent: {
+          id: delMenuDto.id
+        }
+      }
+    })
+    if (data) {
+      throw new BussException('该菜单下存在子菜单，无法进行删除')
+    }
+
+    try {
+      await this.menuRepository.delete(delMenuDto.id);
+    } catch (error) {
+      throw new BussException('删除失败');
     }
   }
 

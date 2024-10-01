@@ -1,5 +1,4 @@
 import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
-// import { Request } from "express";
 
 // 登录鉴权
 export const requireLogin = () => SetMetadata('require-login', true)
