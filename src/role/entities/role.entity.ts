@@ -7,8 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from "typeorm";
-import { Menu } from "src/menu/entities/menu.entity";
-import { PermissionGroup } from "src/permission/entities/permissionGroup.entity";
+import { Menu } from "../../menu/entities/menu.entity";
 import { Permission } from "../../permission/entities/permission.entity";
 import { DateTransformer } from "../../common/transformer/dateTransformer";
 

@@ -1,7 +1,7 @@
 import { HttpStatus, UnprocessableEntityException, ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { FormatResponseInterceptor } from "../interceptor/format-response.interceptor";
-import { AllExceptionFilter } from "../filter/any-exception.filter";
+import { FormatResponseInterceptor } from "./interceptor/format-response.interceptor";
+import { AllExceptionFilter } from "./filter/any-exception.filter";
 
 export default (app) => {
   // 全局管道
@@ -26,7 +26,7 @@ export default (app) => {
   app.useGlobalFilters(new AllExceptionFilter());
 
   // swagger配置
-  const swaggerConfig = new DocumentBuilder().setTitle("vpske-service").setDescription("接口文档").setVersion("0.1").build();
+  const swaggerConfig = new DocumentBuilder().setTitle("nest-admin").setDescription("接口文档").setVersion("0.1").build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup("api-doc", app, document);
 

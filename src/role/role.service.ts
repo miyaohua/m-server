@@ -1,13 +1,13 @@
 import { Injectable } from "@nestjs/common";
-import { GetAllRoleDto } from "./dto/getAllRole.dto";
+import { GetAllRoleDto } from "./dto/get-role.dto";
 import { Like } from "typeorm";
 import { Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Role } from "./entities/role.entity";
-import { DeleteDto } from "./dto/deleteRole.dto";
-import { BussException } from "src/common/exception/buss.exception";
-import { AddRoleDto } from "./dto/addRole.dto";
-import { EditRoleDto } from "./dto/editRole.dto";
+import { DeleteDto } from "./dto/delete-role.dto";
+import { BussException } from "../common/exception/buss.exception";
+import { AddRoleDto } from "./dto/add-role.dto";
+import { EditRoleDto } from "./dto/edit-role.dto";
 
 @Injectable()
 export class RoleService {
@@ -49,9 +49,6 @@ export class RoleService {
     if (!deleteDto.ids.length) {
       throw new BussException("请输入要删除的角色id");
     }
-    if (deleteDto.ids.includes(1)) {
-      throw new BussException("初始化账号禁止操作");
-    }
     try {
       await this.roleRepository.delete(deleteDto.ids);
       return "删除成功";
@@ -85,9 +82,6 @@ export class RoleService {
    * 修改角色
    */
   async edit(editRoleDto: EditRoleDto) {
-    if (editRoleDto.id == "1") {
-      throw new BussException("初始化账号禁止操作");
-    }
     // 是否唯一
     const isUnique = await this.roleRepository.findOne({
       where: {

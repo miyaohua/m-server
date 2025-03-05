@@ -1,12 +1,13 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from "@nestjs/common";
 import { RoleService } from "./role.service";
-import { requireLogin, requirePermission } from "src/common/decorator/auth.decorator";
-import { ApiOperation } from "@nestjs/swagger";
-import { GetAllRoleDto } from "./dto/getAllRole.dto";
-import { DeleteDto } from "./dto/deleteRole.dto";
-import { AddRoleDto } from "./dto/addRole.dto";
-import { EditRoleDto } from "./dto/editRole.dto";
+import { requireLogin, requirePermission } from "../common/decorator/auth.decorator";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { GetAllRoleDto } from "./dto/get-role.dto";
+import { DeleteDto } from "./dto/delete-role.dto";
+import { AddRoleDto } from "./dto/add-role.dto";
+import { EditRoleDto } from "./dto/edit-role.dto";
 
+@ApiTags("角色管理模块")
 @Controller("role")
 export class RoleController {
   constructor(private readonly roleService: RoleService) {

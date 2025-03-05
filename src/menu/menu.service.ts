@@ -1,14 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateMenuDto } from './dto/create-menu.dto';
-import { UpdateMenuDto } from './dto/update-menu.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, TreeRepository } from 'typeorm';
 import { Menu } from './entities/menu.entity';
-import { BussException } from 'src/common/exception/buss.exception';
-import { User } from 'src/user/entities/user.entity';
-import { Role } from 'src/role/entities/role.entity';
-import { AllocationMenuDto } from './dto/AllocationMenu.dto';
-import { MenuByNumDto } from './dto/MenuByNum.dto';
+import { BussException } from '../common/exception/buss.exception';
+import { Role } from '../role/entities/role.entity';
+import { AllocationMenuDto } from './dto/allocation-menu.dto';
+import { MenuByNumDto } from './dto/num-menu.dto';
+import { EditMenuDto } from './dto/edit-menu.dto';
 
 @Injectable()
 export class MenuService {
@@ -51,6 +50,30 @@ export class MenuService {
   }
 
   /**
+   * 修改菜单
+   * @param createMenuDto 
+   */
+  async edit(editMenuDto: EditMenuDto) {
+    const isUnique = await this.menuRepository.findOne({
+      where: {
+        path: editMenuDto.path
+      }
+    })
+    if (isUnique && (isUnique.id !== editMenuDto.id)) {
+      throw new BussException('菜单路径不可重复')
+    }
+    const { parentId, ...result } = editMenuDto
+    const isEdit = await this.menuRepository.update(editMenuDto.id, {
+      ...result,
+      isHidden: Boolean(editMenuDto.isHidden)
+    });
+    if (isEdit.affected === 0) {
+      throw new BussException('修改失败')
+    }
+    return '修改成功'
+  }
+
+  /**
    * 获取有权限的树形结构菜单
    * @returns 
    */
@@ -79,7 +102,10 @@ export class MenuService {
     return filterMenus(menus);
   }
 
-
+  /**
+   * 获取树形结构菜单项
+   * @returns 
+   */
   async allMenu() {
     // 获取这些菜单项的树形结构
     const menus = await this.menuTreeRepository.findTrees() || [];
@@ -120,9 +146,6 @@ export class MenuService {
    */
   async allocationMenu(allocationMenuDto: AllocationMenuDto) {
     const { roleId, menuIds } = allocationMenuDto
-    if (roleId == 1) {
-      throw new BussException('初始化账号禁止操作')
-    }
     try {
       await this.roleRepository.manager.transaction(async (transactionalEntityManager) => {
         const role = await this.roleRepository.findOne({
@@ -141,7 +164,11 @@ export class MenuService {
   }
 
 
-  // 菜单列表
+  /**
+   * 菜单列表
+   * @param menuByNumDto 
+   * @returns 
+   */
   async menuByNum(menuByNumDto: MenuByNumDto) {
     // 有条件的情况下
     if (menuByNumDto.name) {
@@ -161,7 +188,6 @@ export class MenuService {
       const allMenus = await this.menuTreeRepository.findTrees() || [];
       return filterMenus(allMenus, menuByNumDto.name);
     } else {
-
       const menus = await this.menuTreeRepository.findTrees() || [];
       const processMenus = (menus) => {
         return menus.map(menu => {
@@ -183,7 +209,10 @@ export class MenuService {
   }
 
 
-  // 删除菜单
+  /**
+   * 删除菜单
+   * @param delMenuDto 
+   */
   async delMenu(delMenuDto) {
     if (!delMenuDto.id) {
       throw new BussException('请输入有效的菜单ID');

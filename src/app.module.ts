@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { RedisModule } from "./redis/redis.module";
 import { EmailModule } from "./email/email.module";
-import { LoginGuard } from "src/common/guard/login.guard";
+import { LoginGuard } from "./common/guard/login.guard";
 import { PermissionGuard } from "./common/guard/permission.guard";
 import { APP_GUARD } from "@nestjs/core";
 import { MenuModule } from "./menu/menu.module";

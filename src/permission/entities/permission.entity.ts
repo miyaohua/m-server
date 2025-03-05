@@ -8,7 +8,7 @@ export class Permission {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ comment: "权限标识" })
+  @Column({ comment: "权限标识", unique: true })
   identifying: string;
 
   @Column({ comment: "权限中文名" })

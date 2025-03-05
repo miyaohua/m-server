@@ -1,5 +1,5 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches } from "class-validator";
-import { passReg } from "src/utils/reg";
+import { passReg } from "../../utils/reg";
 
 
 export class addUserDto {
@@ -16,4 +16,7 @@ export class addUserDto {
     @IsEmail({}, { message: '请输入合法的邮箱' })
     @IsNotEmpty({ message: '请输入邮箱' })
     email: string
+    
+    @IsOptional()
+    roles: string[]
 }

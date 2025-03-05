@@ -1,11 +1,14 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
-import { AllocationMenuDto } from './dto/AllocationMenu.dto'
-import { MenuByNumDto } from './dto/MenuByNum.dto'
-import { requireLogin, requirePermission, UserInfo } from 'src/common/decorator/auth.decorator';
-import { DelMenuDto } from './dto/DelMenu.dto';
+import { AllocationMenuDto } from './dto/allocation-menu.dto'
+import { MenuByNumDto } from './dto/num-menu.dto'
+import { requireLogin, requirePermission, UserInfo } from '../common/decorator/auth.decorator';
+import { DelMenuDto } from './dto/del-menu.dto';
+import { ApiTags } from '@nestjs/swagger';
+import { EditMenuDto } from './dto/edit-menu.dto';
 
+@ApiTags("菜单管理模块")
 @Controller('menu')
 export class MenuController {
   constructor(private readonly menuService: MenuService) { }
@@ -17,6 +20,15 @@ export class MenuController {
   create(@Body() createMenuDto: CreateMenuDto) {
     return this.menuService.create(createMenuDto);
   }
+
+
+  @Post('/edit')
+  @requireLogin()
+  @requirePermission("update-menu")
+  edit(@Body() editMenuDto: EditMenuDto) {
+    return this.menuService.edit(editMenuDto);
+  }
+
 
 
   @Get()
@@ -48,6 +60,7 @@ export class MenuController {
 
   @Post('/menuByNum')
   @requireLogin()
+  @requirePermission("query-menu")
   menuByNum(@Body() menuByNumDto: MenuByNumDto) {
     return this.menuService.menuByNum(menuByNumDto)
   }

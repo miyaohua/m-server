@@ -3,10 +3,9 @@ import { RegistryDto } from "./dto/registry.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "./entities/user.entity";
 import { In, Like, Repository } from "typeorm";
-import { BussException } from "src/common/exception/buss.exception";
-import { EmailService } from "src/email/email.service";
-import { getRegistrySendEmail } from "./constant/registrySendEmail";
-import { RedisService } from "src/redis/redis.service";
+import { BussException } from "../common/exception/buss.exception";
+import { EmailService } from "../email/email.service";
+import { getRegistrySendEmail } from "./constant/sendEmailTemplate";
 import { hash, verify } from "argon2";
 import { LoginDto } from "./dto/login.dto";
 import * as svgCaptcha from "svg-captcha";
@@ -14,17 +13,19 @@ import { v1 } from "uuid";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 
-import { Role } from "src/role/entities/role.entity";
-import { Permission } from "src/permission/entities/permission.entity";
-import { Menu } from "src/menu/entities/menu.entity";
-import { PermissionGroup } from "src/permission/entities/permissionGroup.entity";
-import { DelUserDto } from "./dto/delUser.dto";
-import { ChangeUserStatusDto } from "./dto/changeUserStatus.dto";
-import { addUserDto } from "./dto/addUser.dto";
-import { EditUserDto } from "./dto/editUser.dto";
-import { GetAllDto } from "./dto/getAll.dto";
+import { Role } from "../role/entities/role.entity";
+import { Permission } from "../permission/entities/permission.entity";
+import { Menu } from "../menu/entities/menu.entity";
+import { PermissionGroup } from "../permission/entities/permissionGroup.entity";
+import { DelUserDto } from "./dto/del-user.dto";
+import { ChangeUserStatusDto } from "./dto/change-user-status.dto";
+import { addUserDto } from "./dto/add-user.dto";
+import { EditUserDto } from "./dto/edit-user.dto";
+import { GetAllDto } from "./dto/get-all.dto";
 import { RegistrySendEmailDto } from "./dto/registrySendEmail.dto";
 
+const NodeCache = require("node-cache");
+const cache = new NodeCache();
 
 @Injectable()
 export class UserService {
@@ -33,9 +34,6 @@ export class UserService {
 
   @Inject(EmailService)
   private readonly emailService: EmailService;
-
-  @Inject(RedisService)
-  private readonly redisService: RedisService;
 
   @Inject(JwtService)
   private readonly jwtService: JwtService;
@@ -54,7 +52,8 @@ export class UserService {
     if (existingEmail) {
       throw new BussException("当前邮箱已被注册");
     }
-    const isCode = await this.redisService.get(`reg_code_${registryDto.email}`);
+
+    const isCode = cache.get(`reg_code_${registryDto.email}`);
 
     if (!isCode) {
       throw new BussException("验证码错误");
@@ -90,7 +89,8 @@ export class UserService {
     }
     let code = Math.random().toString().slice(2, 8);
     let html = getRegistrySendEmail(code);
-    const ttl = await this.redisService.getTtl(`reg_code_${registrySendEmailDto.email}`);
+
+    const ttl = cache.getTtl(`reg_code_${registrySendEmailDto.email}`);
 
     if (ttl !== -2 && ttl > 250) {
       throw new BussException("发送频繁，请稍后再试");
@@ -106,7 +106,7 @@ export class UserService {
     );
     if (sendStatus == "发送成功") {
       // redis存状态
-      await this.redisService.set(`reg_code_${registrySendEmailDto.email}`, code, 300);
+      cache.set(`reg_code_${registrySendEmailDto.email}`, code, 300);
       return "验证码发送成功";
     } else {
       throw new BussException("发送失败");
@@ -126,8 +126,7 @@ export class UserService {
       background: "#6597AE"  //背景颜色
     });
     let randomId = v1();
-    await this.redisService.set(`captcha_${randomId}`, captcha.text, 300);
-
+    cache.set(`captcha_${randomId}`, captcha.text, 300);
     return {
       uuid: randomId,
       img: captcha.data
@@ -140,7 +139,7 @@ export class UserService {
    */
   async login(loginDto: LoginDto) {
     const { email, password, code, uuid } = loginDto;
-    const isUUID = await this.redisService.get(`captcha_${uuid}`);
+    const isUUID = cache.get(`captcha_${uuid}`)
 
     if (!isUUID) {
       throw new BussException("验证码错误");
@@ -232,10 +231,6 @@ export class UserService {
     if (!delUserDto.ids.length) {
       throw new BussException("请输入要删除的用户id");
     }
-
-    if (delUserDto.ids.includes(1)) {
-      throw new BussException("初始化账号禁止操作");
-    }
     try {
       await this.userRepository.delete(delUserDto.ids);
       return "删除成功";
@@ -249,9 +244,6 @@ export class UserService {
    * @param changeUserStatusDto
    */
   async changeUserStatus(changeUserStatusDto: ChangeUserStatusDto) {
-    if (changeUserStatusDto.id == 1) {
-      throw new BussException("初始化账号禁止操作");
-    }
     try {
       await this.userRepository.update(changeUserStatusDto.id, { status: changeUserStatusDto.status });
       return "修改成功";
@@ -270,17 +262,24 @@ export class UserService {
     if (existingEmail) {
       throw new BussException("当前邮箱已被注册");
     }
-    const newUser = new User();
-    newUser.username = addUserDto.username;
-    newUser.email = addUserDto.email;
-    newUser.password = await hash(addUserDto.password);
-    try {
-      const savedUser = await this.userRepository.save(newUser);
-      const { password, ...result } = savedUser;
-      return result;
-    } catch (error) {
-      throw new BussException("新增失败");
-    }
+
+    await this.userRepository.manager.transaction(async (transactionalEntityManager) => {
+      const userRepository = transactionalEntityManager.getRepository(User);
+      const roleRepository = transactionalEntityManager.getRepository(Role);
+      const user = userRepository.create({
+        username: addUserDto.username,
+        email: addUserDto.email,
+        password: await hash(addUserDto.password),
+        roles: await roleRepository.findByIds(addUserDto.roles)
+      });
+      try {
+        const savedUser = await userRepository.save(user);
+        const { password, ...result } = savedUser;
+        return result;
+      } catch (error) {
+        throw new BussException("新增失败");
+      }
+    });
   }
 
 
@@ -289,10 +288,14 @@ export class UserService {
    * @param editUserDto
    */
   async editUser(editUserDto: EditUserDto) {
+    const existingEmail = await this.userRepository.findOne({ where: { email: editUserDto.email } });
+
+    if (existingEmail && (existingEmail.id !== editUserDto.id)) {
+      throw new BussException("当前邮箱已被注册");
+    }
+
     // 如果提供了密码，则进行验证和哈希处理
     if (editUserDto.password) {
-      console.log(editUserDto.password);
-
       const reg = /^(?![\d]+$)(?![a-zA-Z]+$)(?![^a-zA-Z0-9]+$).{6,20}$/;
       const flag = reg.test(editUserDto.password);
       if (!flag) {
@@ -304,6 +307,7 @@ export class UserService {
     await this.userRepository.manager.transaction(async (transactionalEntityManager) => {
       const userRepository = transactionalEntityManager.getRepository(User);
       const roleRepository = transactionalEntityManager.getRepository(Role);
+
       // 更新用户信息
       let updateObj: any = {
         username: editUserDto.username,
@@ -435,6 +439,7 @@ export class UserService {
     permission4.desc = "用户拥有查询菜单权限";
     await this.permissionRepository.save(permission4);
 
+
     let permissionGroup1 = new PermissionGroup();
     permissionGroup1.name = "菜单权限";
     permissionGroup1.permissions = [permission1, permission2, permission3, permission4];
@@ -523,14 +528,33 @@ export class UserService {
     await this.permissionRepository.save(permission16);
 
     let permission17 = new Permission();
-    permission17.identifying = "query-permission";
-    permission17.name = "查询权限";
-    permission17.desc = "用户拥有查询权限权限";
+    permission17.identifying = "query-permissionGroup";
+    permission17.name = "查询权限组权限";
+    permission17.desc = "用户拥有查询权限组权限";
     await this.permissionRepository.save(permission17);
+
+    let permission91 = new Permission();
+    permission91.identifying = "create-permissionGroup";
+    permission91.name = "新增权限组权限";
+    permission91.desc = "用户拥有新增权限组权限";
+    await this.permissionRepository.save(permission91);
+
+    let permission92 = new Permission();
+    permission92.identifying = "delete-permissionGroup";
+    permission92.name = "删除权限组权限";
+    permission92.desc = "用户拥有删除权限组权限";
+    await this.permissionRepository.save(permission92);
+
+
+    let permission93 = new Permission();
+    permission93.identifying = "update-permissionGroup";
+    permission93.name = "更新权限组权限";
+    permission93.desc = "用户拥有更新权限组权限";
+    await this.permissionRepository.save(permission93);
 
     let permissionGroup4 = new PermissionGroup();
     permissionGroup4.name = "权限管理";
-    permissionGroup4.permissions = [permission14, permission15, permission16, permission17];
+    permissionGroup4.permissions = [permission14, permission15, permission16, permission17, permission91, permission92, permission93];
     await this.PermissionGroupRepository.save(permissionGroup4);
 
 
@@ -547,6 +571,7 @@ export class UserService {
     permission19.desc = "用户拥有为角色分配菜单权限";
     await this.permissionRepository.save(permission19);
 
+
     let permissionGroup5 = new PermissionGroup();
     permissionGroup5.name = "系统管理";
     permissionGroup5.permissions = [permission18, permission19];
@@ -556,7 +581,7 @@ export class UserService {
     let role = new Role();
     role.name = "超级管理员";
     role.desc = "拥有网站的最高控制权";
-    role.permissions = [permission1, permission2, permission3, permission4, permission5, permission6, permission7, permission8, permission10, permission11, permission12, permission13, permission14, permission15, permission16, permission17, permission18, permission19];
+    role.permissions = [permission1, permission2, permission3, permission4, permission5, permission6, permission7, permission8, permission10, permission11, permission12, permission13, permission14, permission15, permission16, permission17, permission91, permission92, permission93, permission18, permission19];
     role.menus = [menu1, menu2, menu3, menu4, menu5];
     await this.roleRepository.save(role);
 

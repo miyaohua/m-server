@@ -17,7 +17,14 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
     // 拿到用户的权限信息
-    const permissions = request.userInfo.permissions;
+    let permissions = request.userInfo.permissions;
+
+    // 用户可能有多个角色，根据用户多个角色拥有的权限去重复
+    permissions = permissions.filter(
+      (item, index, self) =>
+        index === self.findIndex(t => t.id === item.id)
+    );
+
     // 是否需要鉴权
     const requirePermission = this.reflector.getAllAndOverride("require-permission", [
       context.getClass(),

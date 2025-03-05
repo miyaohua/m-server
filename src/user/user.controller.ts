@@ -4,12 +4,12 @@ import { RegistryDto } from "./dto/registry.dto";
 import { RegistrySendEmailDto } from "./dto/registrySendEmail.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LoginDto } from "./dto/login.dto";
-import { requireLogin, requirePermission } from "src/common/decorator/auth.decorator";
-import { GetAllDto } from "./dto/getAll.dto";
-import { DelUserDto } from "./dto/delUser.dto";
-import { ChangeUserStatusDto } from "./dto/changeUserStatus.dto";
-import { addUserDto } from "./dto/addUser.dto";
-import { EditUserDto } from "./dto/editUser.dto";
+import { requireLogin, requirePermission } from "../common/decorator/auth.decorator";
+import { GetAllDto } from "./dto/get-all.dto";
+import { DelUserDto } from "./dto/del-user.dto";
+import { ChangeUserStatusDto } from "./dto/change-user-status.dto";
+import { addUserDto } from "./dto/add-user.dto";
+import { EditUserDto } from "./dto/edit-user.dto";
 
 @ApiTags("用户管理模块")
 @Controller("user")

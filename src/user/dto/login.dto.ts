@@ -1,5 +1,5 @@
 import { IsEmail, IsNotEmpty, Matches } from "class-validator";
-import { passReg } from "src/utils/reg";
+import { passReg } from "../../utils/reg";
 export class LoginDto {
 
     @IsEmail({}, { message: '请输入合法的邮箱' })

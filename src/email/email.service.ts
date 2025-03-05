@@ -1,13 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { RedisService } from 'src/redis/redis.service';
+import { RedisService } from '../redis/redis.service';
 import { createTransport, Transporter } from 'nodemailer'
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EmailService {
     @Inject(RedisService)
-    private redisService: RedisService;
-    // email
     private transporter: Transporter
 
     constructor(private readonly configService: ConfigService) {
@@ -28,16 +26,20 @@ export class EmailService {
      * @param param
      */
     async sendMail({ name, to, subject, html }) {
-        await this.transporter.sendMail({
-            from: {
-                name: name,
-                address: this.configService.get('email_smtp_user'),
-            },
-            to,
-            subject,
-            html
-        })
-        return '发送成功'
+        try {
+            await this.transporter && this.transporter.sendMail({
+                from: {
+                    name: name,
+                    address: this.configService.get('email_smtp_user'),
+                },
+                to,
+                subject,
+                html
+            })
+            return '发送成功'
+        } catch (error) {
+            return '发送失败，请检查邮箱'
+        }
     }
 
 }

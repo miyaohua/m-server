@@ -1,5 +1,5 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString, Length, Matches } from 'class-validator'
-import { passReg } from 'src/utils/reg'
+import { passReg } from '../../utils/reg'
 // 注册用户
 export class RegistryDto {
     @IsString()
