@@ -12,7 +12,6 @@ import * as svgCaptcha from "svg-captcha";
 import { v1 } from "uuid";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
-
 import { Role } from "../role/entities/role.entity";
 import { Permission } from "../permission/entities/permission.entity";
 import { Menu } from "../menu/entities/menu.entity";
@@ -23,6 +22,7 @@ import { addUserDto } from "./dto/add-user.dto";
 import { EditUserDto } from "./dto/edit-user.dto";
 import { GetAllDto } from "./dto/get-all.dto";
 import { RegistrySendEmailDto } from "./dto/registrySendEmail.dto";
+import { ForgotPasswordDto } from "./dto/forgot-user.dto";
 
 const NodeCache = require("node-cache");
 const cache = new NodeCache();
@@ -91,11 +91,10 @@ export class UserService {
     let html = getRegistrySendEmail(code);
 
     const ttl = cache.getTtl(`reg_code_${registrySendEmailDto.email}`);
-
-    if (ttl !== -2 && ttl > 250) {
+    // getTtl返回毫秒 计算剩余时间
+    if (ttl && Math.round((ttl - +Date.now()) / 1000) > 250) {
       throw new BussException("发送频繁，请稍后再试");
     }
-
     let sendStatus = await this.emailService.sendMail(
       {
         name: "用户注册",
@@ -105,13 +104,74 @@ export class UserService {
       }
     );
     if (sendStatus == "发送成功") {
-      // redis存状态
       cache.set(`reg_code_${registrySendEmailDto.email}`, code, 300);
       return "验证码发送成功";
     } else {
       throw new BussException("发送失败");
     }
   }
+
+
+  /**
+   * 忘记密码发送验证码
+   */
+  async forgotPasswordSendEmail(registrySendEmailDto: RegistrySendEmailDto) {
+    const existingEmail = await this.userRepository.findOne({ where: { email: registrySendEmailDto.email } });
+    if (!existingEmail) {
+      throw new BussException("当前邮箱未注册");
+    }
+    let code = Math.random().toString().slice(2, 8);
+    let html = getRegistrySendEmail(code);
+
+    const ttl = cache.getTtl(`forgot_code_${registrySendEmailDto.email}`);
+    // getTtl返回毫秒 计算剩余时间
+    if (ttl && Math.round((ttl - +Date.now()) / 1000) > 250) {
+      throw new BussException("发送频繁，请稍后再试");
+    }
+    let sendStatus = await this.emailService.sendMail(
+      {
+        name: "忘记密码",
+        to: registrySendEmailDto.email,
+        subject: "重置验证码",
+        html
+      }
+    );
+    if (sendStatus == "发送成功") {
+      cache.set(`forgot_code_${registrySendEmailDto.email}`, code, 300);
+      return "验证码发送成功";
+    } else {
+      throw new BussException("发送失败");
+    }
+
+  }
+
+
+  /**
+   * 忘记密码
+   * @param forgotPasswordDto 
+   */
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const existingEmail = await this.userRepository.findOne({ where: { email: forgotPasswordDto.email } });
+    if (!existingEmail) {
+      throw new BussException("当前邮箱未注册");
+    }
+
+    const { email, password, code } = forgotPasswordDto;
+    const isUUID = cache.get(`forgot_code_${email}`)
+
+    if (!isUUID) {
+      throw new BussException("验证码错误");
+    }
+    if (isUUID !== code) {
+      throw new BussException("验证码错误");
+    }
+
+    const isUpdate = await this.userRepository.update(existingEmail, {
+      password: await hash(password)
+    });
+    console.log(isUpdate)
+  }
+
 
   /**
    * 获取登录验证码

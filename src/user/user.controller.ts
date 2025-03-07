@@ -10,6 +10,7 @@ import { DelUserDto } from "./dto/del-user.dto";
 import { ChangeUserStatusDto } from "./dto/change-user-status.dto";
 import { addUserDto } from "./dto/add-user.dto";
 import { EditUserDto } from "./dto/edit-user.dto";
+import { ForgotPasswordDto } from "./dto/forgot-user.dto";
 
 @ApiTags("用户管理模块")
 @Controller("user")
@@ -41,13 +42,35 @@ export class UserController {
     return this.userService.registrySendEmail(registrySendEmailDto);
   }
 
+
+
   @ApiOperation({
-    summary: "获取计算验证码"
+    summary: "用户找回密码发送邮箱"
+  })
+  @Post("/forgotPasswordSendEmail")
+  forgotPasswordSendEmail(@Body() registrySendEmailDto: RegistrySendEmailDto) {
+    return this.userService.forgotPasswordSendEmail(registrySendEmailDto);
+  }
+
+
+  @ApiOperation({
+    summary: "用户找回密码发送邮箱"
+  })
+  @Post("/forgotPassword")
+  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.userService.forgotPassword(forgotPasswordDto);
+  }
+
+
+
+  @ApiOperation({
+    summary: "获取登录验证码"
   })
   @Post("/getPicCode")
   getPicCode() {
     return this.userService.getPicCode();
   }
+
 
   @ApiOperation({
     summary: "用户分页查询"
