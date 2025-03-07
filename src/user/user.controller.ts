@@ -4,7 +4,7 @@ import { RegistryDto } from "./dto/registry.dto";
 import { RegistrySendEmailDto } from "./dto/registrySendEmail.dto";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { LoginDto } from "./dto/login.dto";
-import { requireLogin, requirePermission } from "../common/decorator/auth.decorator";
+import { requireLogin, requirePermission, UserInfo } from "../common/decorator/auth.decorator";
 import { GetAllDto } from "./dto/get-all.dto";
 import { DelUserDto } from "./dto/del-user.dto";
 import { ChangeUserStatusDto } from "./dto/change-user-status.dto";
@@ -81,6 +81,17 @@ export class UserController {
   getAllUser(@Body() getAllDto: GetAllDto) {
     return this.userService.getAllUser(getAllDto);
   }
+
+
+  @ApiOperation({
+    summary: "查询个人资料"
+  })
+  @requireLogin()
+  @Post("/getUserInfo")
+  getUserInfo(@UserInfo() userInfo) {
+    return this.userService.getUserInfo(userInfo);
+  }
+
 
 
   @ApiOperation({

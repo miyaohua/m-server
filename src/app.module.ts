@@ -12,6 +12,7 @@ import { MenuModule } from "./menu/menu.module";
 import { RoleModule } from "./role/role.module";
 import { PermissionModule } from "./permission/permission.module";
 import { resetTokenMiddleware } from "./common/middleware/resetTokenMiddleware";
+import rateLimitConf from "./utils/rateLimit";
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { resetTokenMiddleware } from "./common/middleware/resetTokenMiddleware";
       },
       inject: [ConfigService]
     }),
+
     UserModule,
     RedisModule,
     EmailModule,
@@ -74,8 +76,14 @@ import { resetTokenMiddleware } from "./common/middleware/resetTokenMiddleware";
 export class AppModule {
   // 全局中间件
   configure(consumer: MiddlewareConsumer) {
+
     consumer
       .apply(resetTokenMiddleware)
+      .forRoutes("*");
+
+
+    consumer
+      .apply(rateLimitConf)
       .forRoutes("*"); // `*` 表示所有路由
   }
 }

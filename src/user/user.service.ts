@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { RegistryDto } from "./dto/registry.dto";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "./entities/user.entity";
@@ -62,14 +62,25 @@ export class UserService {
     if (isCode !== registryDto.code) {
       throw new BussException("验证码错误");
     }
+    const defaultRole = await this.roleRepository.findOne({
+      where: {
+        name: "普通用户"
+      },
+    });
+
+    if (!defaultRole) {
+      throw new BussException("注册失败，默认角色不存在");
+    }
 
     const newUser = new User();
     newUser.username = registryDto.username;
     newUser.email = registryDto.email;
     newUser.password = await hash(registryDto.password);
+    newUser.roles = [defaultRole]
 
     try {
       const savedUser = await this.userRepository.save(newUser);
+
       const { password, ...result } = savedUser;
       return result;
     } catch (error) {
@@ -170,6 +181,15 @@ export class UserService {
       password: await hash(password)
     });
     console.log(isUpdate)
+  }
+
+
+  /**
+   * 获取个人资料
+   * @param userInfo 
+   */
+  getUserInfo(userInfo) {
+    return userInfo
   }
 
 
@@ -474,6 +494,27 @@ export class UserService {
     await this.menuRepository.save(menu5);
 
 
+
+    let menu6 = new Menu();
+    menu6.name = "其他菜单";
+    menu6.path = "/other";
+    menu6.menuType = MenuType.M;
+    menu6.menuIcon = "SettingOutlined";
+    menu6.isHidden = true;
+    await this.menuRepository.save(menu6);
+
+    let menu7 = new Menu();
+    menu7.name = "个人信息";
+    menu7.path = "/other/userinfo";
+    menu7.component = "userinfo";
+    menu7.menuType = MenuType.C;
+    menu7.menuIcon = "LockOutlined";
+    menu6.isHidden = true;
+    menu7.parent = menu6;
+    await this.menuRepository.save(menu7);
+
+
+
     // 菜单权限
     let permission1 = new Permission();
     permission1.identifying = "create-menu";
@@ -642,8 +683,16 @@ export class UserService {
     role.name = "超级管理员";
     role.desc = "拥有网站的最高控制权";
     role.permissions = [permission1, permission2, permission3, permission4, permission5, permission6, permission7, permission8, permission10, permission11, permission12, permission13, permission14, permission15, permission16, permission17, permission91, permission92, permission93, permission18, permission19];
-    role.menus = [menu1, menu2, menu3, menu4, menu5];
+    role.menus = [menu1, menu2, menu3, menu4, menu5, menu6, menu7];
     await this.roleRepository.save(role);
+
+
+    let role1 = new Role();
+    role1.name = "普通用户";
+    role1.desc = "拥有网站的普通用户权限";
+    role1.permissions = [];
+    role1.menus = [menu6, menu7];
+    await this.roleRepository.save(role1);
 
 
     let user = new User();
